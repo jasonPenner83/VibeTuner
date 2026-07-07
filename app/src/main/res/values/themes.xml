@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.VibeTuner" parent="Theme.MaterialComponents.Light" />
+</resources>

@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Vibe/Equalizer bars representing energy and media -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,44h4v20h-4z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,36h4v36h-4z" />
+    <!-- Stylized 'V' and 'Play' button combination -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,30 L84,54 L44,78 L60,54 Z" />
+</vector>

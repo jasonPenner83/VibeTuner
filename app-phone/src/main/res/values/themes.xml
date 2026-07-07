@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.VibeTunerPhone" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
+</resources>
