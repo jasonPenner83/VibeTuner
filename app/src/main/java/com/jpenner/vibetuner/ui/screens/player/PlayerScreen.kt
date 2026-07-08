@@ -4,7 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -27,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -82,6 +85,7 @@ fun PlayerScreen(
     val topBarFocusRequester = remember { FocusRequester() }
     val chromeFocusRequester = remember { FocusRequester() }
     val switcherFocusRequester = remember { FocusRequester() }
+    val sheetFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(state.chromeFocused) {
         if (state.chromeFocused) runCatching { chromeFocusRequester.requestFocus() }
@@ -94,12 +98,20 @@ fun PlayerScreen(
             runCatching { focusRequester.requestFocus() }
         }
     }
+    LaunchedEffect(state.sheet) {
+        if (state.sheet != null) {
+            runCatching { sheetFocusRequester.requestFocus() }
+        } else if (state.chromeFocused) {
+            runCatching { chromeFocusRequester.requestFocus() }
+        }
+    }
     val player = rememberPlayer(
         streamUrl = streamUrl,
         program = program,
         onBuffering = viewModel::setBuffering,
         onError = viewModel::setError,
         onReady = onFirstFrameReady,
+        onTracks = { viewModel.setTrackOptions(audioOptions(it), subtitleOptions(it)) },
     )
 
     LaunchedEffect(channel, program) { viewModel.open(channel, program) }
@@ -148,6 +160,7 @@ fun PlayerScreen(
                 if (event.key == Key.Back) {
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                     return@onPreviewKeyEvent when {
+                        state.sheet != null -> { viewModel.closeSheet(); true }
                         state.switcherOpen -> { viewModel.closeSwitcher(); true }
                         state.chromeFocused -> { viewModel.closeChrome(); true }
                         else -> false // baseline: let BackHandler exit
@@ -275,6 +288,30 @@ fun PlayerScreen(
                 onDismiss = viewModel::closeSwitcher,
                 focusRequester = switcherFocusRequester,
             )
+        }
+
+        // 4b) Audio/subtitle/info side panel
+        AnimatedVisibility(
+            visible = state.sheet != null,
+            modifier = Modifier.align(Alignment.CenterEnd),
+            enter = slideInHorizontally { it } + fadeIn(),
+            exit = slideOutHorizontally { it } + fadeOut(),
+        ) {
+            state.sheet?.let { sheet ->
+                PlayerSheetOverlay(
+                    sheet = sheet,
+                    channel = state.channel,
+                    program = state.program,
+                    audioOptions = state.audioOptions,
+                    subtitleOptions = state.subtitleOptions,
+                    onSelect = { option ->
+                        val type = if (sheet == PlayerSheet.Audio) C.TRACK_TYPE_AUDIO else C.TRACK_TYPE_TEXT
+                        selectTrack(player, type, option)
+                        viewModel.closeSheet()
+                    },
+                    focusRequester = sheetFocusRequester,
+                )
+            }
         }
 
         // 5) Buffering / error states
