@@ -158,6 +158,7 @@ class MainActivity : ComponentActivity() {
                     val ch = channels.find { it.id == channelId }
                     tunedChannel = ch
                     tunedProgram = ch?.nowPlaying(currentGuideMinutes())
+                    ch?.let { channelRepository.setTunedChannel(it.id) }
                     playerChannels = channels
                     beginWatch()
                 }
@@ -207,6 +208,7 @@ class MainActivity : ComponentActivity() {
                                     val ch = guideVm.state.value.channels.find { it.id == channelId }
                                     tunedChannel = ch
                                     tunedProgram = ch?.nowPlaying(currentGuideMinutes())
+                                    ch?.let { channelRepository.setTunedChannel(it.id) }
                                     playerChannels = guideVm.state.value.channels
                                     beginWatch()
                                 },
@@ -216,6 +218,7 @@ class MainActivity : ComponentActivity() {
                                         .find { c -> c.programs.any { it.id == programId } }
                                     tunedChannel = ch
                                     tunedProgram = ch?.programs?.firstOrNull { it.id == programId }
+                                    ch?.let { channelRepository.setTunedChannel(it.id) }
                                     playerChannels = guideVm.state.value.channels
                                     beginWatch()
                                 },
@@ -370,6 +373,7 @@ class MainActivity : ComponentActivity() {
                                             val ch = playerChannels.find { it.id == channelId }
                                             tunedChannel = ch
                                             tunedProgram = ch?.nowPlaying(currentGuideMinutes())
+                                            ch?.let { channelRepository.setTunedChannel(it.id) }
                                             beginWatch()
                                         },
                                         onFirstFrameReady = { playerReady = true },
