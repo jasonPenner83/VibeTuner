@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Settings
@@ -47,6 +48,15 @@ fun GuideScreen(
     var showGenrePicker by remember { mutableStateOf(false) }
     var selectedChannel by remember { mutableStateOf<Channel?>(null) }
 
+    val listState = rememberLazyListState()
+    // Scroll to the tuned channel's row whenever it resolves to a real index
+    // (e.g. right after returning from Player). -1 (no tuned channel, or it's
+    // filtered out) is a no-op.
+    val focusIndex = state.visibleChannels.indexOfFirst { it.id == state.focusChannelId }
+    LaunchedEffect(focusIndex) {
+        if (focusIndex >= 0) listState.scrollToItem(focusIndex)
+    }
+
     Box(Modifier.fillMaxSize().background(PhoneColors.Bg)) {
         Column(Modifier.fillMaxSize()) {
             Row(
@@ -78,6 +88,7 @@ fun GuideScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -87,6 +98,7 @@ fun GuideScreen(
                             nowMinutes = state.nowMinutes,
                             onClick = { onWatch(channel.id) },
                             onOpenMenu = { selectedChannel = channel },
+                            isCurrent = channel.id == state.focusChannelId,
                         )
                     }
                 }

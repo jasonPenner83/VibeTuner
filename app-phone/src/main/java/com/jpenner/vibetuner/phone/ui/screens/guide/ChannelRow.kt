@@ -1,5 +1,6 @@
 package com.jpenner.vibetuner.phone.ui.screens.guide
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,11 +43,17 @@ fun ChannelRow(
     nowMinutes: Int,
     onClick: () -> Unit,
     onOpenMenu: () -> Unit,
+    isCurrent: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val now = channel.nowPlaying(nowMinutes)
 
-    PhoneCard(onClick = onClick, onLongClick = onOpenMenu, modifier = modifier.fillMaxWidth()) {
+    PhoneCard(
+        onClick = onClick,
+        onLongClick = onOpenMenu,
+        modifier = modifier.fillMaxWidth(),
+        border = if (isCurrent) BorderStroke(2.dp, PhoneColors.Accent) else BorderStroke(1.dp, PhoneColors.Line),
+    ) {
         Column(Modifier.fillMaxWidth().padding(14.dp)) {
             // channel identity
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -28,6 +28,7 @@ fun PhoneCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(12.dp),
     contentPadding: PaddingValues = PaddingValues(0.dp),
+    border: BorderStroke = BorderStroke(1.dp, PhoneColors.Line),
     content: @Composable () -> Unit,
 ) {
     val interactionSource = rememberPressInteractionSource()
@@ -39,7 +40,7 @@ fun PhoneCard(
             containerColor = PhoneColors.Surface,
             contentColor = PhoneColors.Txt,
         ),
-        border = BorderStroke(1.dp, PhoneColors.Line),
+        border = border,
         interactionSource = interactionSource,
     ) {
         Box(Modifier.padding(contentPadding)) { content() }
@@ -54,6 +55,7 @@ fun PhoneCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(12.dp),
     contentPadding: PaddingValues = PaddingValues(0.dp),
+    border: BorderStroke = BorderStroke(1.dp, PhoneColors.Line),
     content: @Composable () -> Unit,
 ) {
     val interactionSource = rememberPressInteractionSource()
@@ -72,7 +74,7 @@ fun PhoneCard(
             containerColor = PhoneColors.Surface,
             contentColor = PhoneColors.Txt,
         ),
-        border = BorderStroke(1.dp, PhoneColors.Line),
+        border = border,
     ) {
         Box(Modifier.padding(contentPadding)) { content() }
     }
