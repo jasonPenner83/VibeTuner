@@ -12,9 +12,10 @@ import androidx.tv.material3.*
 import com.jpenner.vibetuner.ui.theme.AerialColors
 import com.jpenner.vibetuner.ui.components.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Forward30
-import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
 import com.jpenner.vibetuner.ui.theme.AerialTypography
 
 data class PlaybackState(
@@ -33,6 +34,9 @@ fun PlaybackControls(
     onRestart: () -> Unit,
     onJumpForward: () -> Unit,
     onOpenGuide: () -> Unit = {},
+    onOpenSubtitles: () -> Unit = {},
+    onOpenAudio: () -> Unit = {},
+    onOpenInfo: () -> Unit = {},
     firstControlFocusRequester: FocusRequester? = null,
     upFocusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
@@ -55,10 +59,16 @@ fun PlaybackControls(
                         .let { if (upFocusRequester != null) it.focusProperties { up = upFocusRequester } else it },
                 )
                 ControlButton(Icons.Default.Forward30, onJumpForward)
-                ControlButton(Icons.Default.SwapVert, onPlayPause)   // CH up/down
+                ControlButton(
+                    if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    onPlayPause,
+                )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                PillButton("CC Subtitles"); PillButton("Audio"); PillButton("Guide", onOpenGuide)
+                PillButton("CC Subtitles", onOpenSubtitles)
+                PillButton("Audio", onOpenAudio)
+                PillButton("Info", onOpenInfo)
+                PillButton("Guide", onOpenGuide)
             }
         }
     }

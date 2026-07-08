@@ -34,6 +34,7 @@ import androidx.media3.ui.PlayerView
 import com.jpenner.vibetuner.data.model.Channel
 import com.jpenner.vibetuner.data.model.Program
 import com.jpenner.vibetuner.ui.components.*
+import com.jpenner.vibetuner.ui.screens.player.PlayerSheet
 import com.jpenner.vibetuner.ui.theme.Dimens.DesignCanvasWidth
 import com.jpenner.vibetuner.ui.theme.Dimens
 import java.time.LocalTime
@@ -241,6 +242,11 @@ fun PlayerScreen(
                     viewModel.showControls()
                 },
                 onSeek = { /* scrubbing is display-only for now */ },
+                onRestart = {
+                    player.seekTo(0)
+                    viewModel.showControls()
+                },
+                onOpenSheet = viewModel::openSheet,
                 onOpenGuide = onOpenGuide,
                 topBarFocusRequester = topBarFocusRequester,
                 chromeFocusRequester = chromeFocusRequester,
@@ -311,6 +317,8 @@ private fun PlayerChrome(
     onBack: () -> Unit,
     onPlayPause: () -> Unit,
     onSeek: (Float) -> Unit,
+    onRestart: () -> Unit,
+    onOpenSheet: (PlayerSheet) -> Unit,
     onOpenGuide: () -> Unit,
     topBarFocusRequester: FocusRequester,
     chromeFocusRequester: FocusRequester,
@@ -331,9 +339,12 @@ private fun PlayerChrome(
             ),
             onPlayPause = onPlayPause,
             onSeek = onSeek,
-            onRestart = { onSeek(0f) },
+            onRestart = onRestart,
             onJumpForward = { onSeek((state.progress + 0.02f).coerceAtMost(1f)) },
             onOpenGuide = onOpenGuide,
+            onOpenSubtitles = { onOpenSheet(PlayerSheet.Subtitles) },
+            onOpenAudio = { onOpenSheet(PlayerSheet.Audio) },
+            onOpenInfo = { onOpenSheet(PlayerSheet.Info) },
             firstControlFocusRequester = chromeFocusRequester,
             upFocusRequester = topBarFocusRequester,
             modifier = Modifier.align(Alignment.BottomCenter),
