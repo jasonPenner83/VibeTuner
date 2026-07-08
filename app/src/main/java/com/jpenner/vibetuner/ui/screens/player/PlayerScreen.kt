@@ -10,11 +10,13 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
@@ -37,6 +39,9 @@ import androidx.media3.ui.PlayerView
 import com.jpenner.vibetuner.data.model.Channel
 import com.jpenner.vibetuner.data.model.Program
 import com.jpenner.vibetuner.ui.components.*
+import com.jpenner.vibetuner.ui.screens.lineup.DayLineupContent
+import com.jpenner.vibetuner.ui.screens.lineup.DayLineupViewModel
+import com.jpenner.vibetuner.ui.theme.AerialColors
 import com.jpenner.vibetuner.ui.theme.Dimens.DesignCanvasWidth
 import com.jpenner.vibetuner.ui.theme.Dimens
 import java.time.LocalTime
@@ -55,6 +60,8 @@ fun PlayerScreen(
     onOpenGuide: () -> Unit,
     isFavourite: Boolean = false,
     onToggleFavourite: () -> Unit = {},
+    // Non-null enables the Schedule pill's full-day overlay (PlayerSheet.Schedule).
+    lineupViewModel: DayLineupViewModel? = null,
     // Fired once when the video has buffered its first frame — the tune-in
     // overlay keys off this to lift itself.
     onFirstFrameReady: () -> Unit = {},
@@ -101,7 +108,10 @@ fun PlayerScreen(
     }
     LaunchedEffect(state.sheet) {
         if (state.sheet != null) {
-            runCatching { sheetFocusRequester.requestFocus() }
+            // Schedule lands focus on its own live row (see DayLineupContent).
+            if (state.sheet != PlayerSheet.Schedule) {
+                runCatching { sheetFocusRequester.requestFocus() }
+            }
         } else if (state.chromeFocused) {
             runCatching { chromeFocusRequester.requestFocus() }
         }
@@ -262,6 +272,7 @@ fun PlayerScreen(
                 },
                 onOpenSheet = viewModel::openSheet,
                 onOpenGuide = onOpenGuide,
+                onOpenSchedule = { viewModel.openSheet(PlayerSheet.Schedule) },
                 isFavourite = isFavourite,
                 onToggleFavourite = onToggleFavourite,
                 topBarFocusRequester = topBarFocusRequester,
@@ -295,7 +306,7 @@ fun PlayerScreen(
 
         // 4b) Audio/subtitle/info side panel
         AnimatedVisibility(
-            visible = state.sheet != null,
+            visible = state.sheet != null && state.sheet != PlayerSheet.Schedule,
             modifier = Modifier.align(Alignment.CenterEnd),
             enter = slideInHorizontally { it } + fadeIn(),
             exit = slideOutHorizontally { it } + fadeOut(),
@@ -314,6 +325,28 @@ fun PlayerScreen(
                     },
                     focusRequester = sheetFocusRequester,
                 )
+            }
+        }
+
+        // 4c) Full-day schedule overlay (Schedule pill). Playback continues
+        // behind it; Back closes it via the sheet branch of onPreviewKeyEvent.
+        AnimatedVisibility(
+            visible = state.sheet == PlayerSheet.Schedule && lineupViewModel != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            val lineupChannelId = state.channel?.id
+            if (lineupViewModel != null && lineupChannelId != null) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(AerialColors.Bg.copy(alpha = 0.92f))
+                        // Trap D-pad focus inside the overlay (same pattern as ContextSideSheet).
+                        .focusProperties { this.onExit = { cancelFocusChange() } }
+                        .focusGroup(),
+                ) {
+                    DayLineupContent(channelId = lineupChannelId, viewModel = lineupViewModel)
+                }
             }
         }
 
@@ -360,6 +393,7 @@ private fun PlayerChrome(
     onRestart: () -> Unit,
     onOpenSheet: (PlayerSheet) -> Unit,
     onOpenGuide: () -> Unit,
+    onOpenSchedule: () -> Unit,
     isFavourite: Boolean = false,
     onToggleFavourite: () -> Unit = {},
     topBarFocusRequester: FocusRequester,
@@ -390,6 +424,7 @@ private fun PlayerChrome(
             onOpenSubtitles = { onOpenSheet(PlayerSheet.Subtitles) },
             onOpenAudio = { onOpenSheet(PlayerSheet.Audio) },
             onOpenInfo = { onOpenSheet(PlayerSheet.Info) },
+            onOpenSchedule = onOpenSchedule,
             firstControlFocusRequester = chromeFocusRequester,
             upFocusRequester = topBarFocusRequester,
             modifier = Modifier.align(Alignment.BottomCenter),

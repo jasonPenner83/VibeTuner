@@ -411,6 +411,7 @@ class MainActivity : ComponentActivity() {
                                                 playerFavourite = !playerFavourite
                                             }
                                         },
+                                        lineupViewModel = rememberDayLineupViewModel(),
                                     )
                                 }
                                 androidx.compose.animation.AnimatedVisibility(

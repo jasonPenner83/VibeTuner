@@ -4,7 +4,7 @@ import com.jpenner.vibetuner.data.model.Channel
 import com.jpenner.vibetuner.data.model.Program
 
 /** Which overlay sheet (TV side panel / phone bottom sheet) is open. */
-enum class PlayerSheet { Audio, Subtitles, Info }
+enum class PlayerSheet { Audio, Subtitles, Info, Schedule }
 
 /** Immutable snapshot of everything the player chrome renders. */
 data class PlayerUiState(

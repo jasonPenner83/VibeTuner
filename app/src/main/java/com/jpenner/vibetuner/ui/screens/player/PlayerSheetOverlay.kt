@@ -68,6 +68,7 @@ fun PlayerSheetOverlay(
                 PlayerSheet.Audio -> TrackList("AUDIO", audioOptions, onSelect, focusRequester)
                 PlayerSheet.Subtitles -> TrackList("SUBTITLES", subtitleOptions, onSelect, focusRequester)
                 PlayerSheet.Info -> InfoPanel(channel, program, focusRequester)
+                PlayerSheet.Schedule -> Unit // full-screen overlay, hosted by PlayerScreen
             }
         }
     }

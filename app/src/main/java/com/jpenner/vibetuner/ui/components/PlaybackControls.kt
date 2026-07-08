@@ -37,6 +37,7 @@ fun PlaybackControls(
     onOpenSubtitles: () -> Unit = {},
     onOpenAudio: () -> Unit = {},
     onOpenInfo: () -> Unit = {},
+    onOpenSchedule: () -> Unit = {},
     firstControlFocusRequester: FocusRequester? = null,
     upFocusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
@@ -68,6 +69,7 @@ fun PlaybackControls(
                 PillButton("CC Subtitles", onOpenSubtitles)
                 PillButton("Audio", onOpenAudio)
                 PillButton("Info", onOpenInfo)
+                PillButton("Schedule", onOpenSchedule)
                 PillButton("Guide", onOpenGuide)
             }
         }

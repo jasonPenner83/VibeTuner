@@ -206,6 +206,7 @@ fun PlayerScreen(
                 program = state.program,
                 onDismiss = dismissSheet,
             )
+            PlayerSheet.Schedule -> Unit // bridging branch; Task 9 wires the phone Schedule sheet
             null -> Unit
         }
     }
