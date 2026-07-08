@@ -40,6 +40,7 @@ class PlayerViewModel : ViewModel() {
                 clock = clock(),
                 chromeFocused = false,
                 switcherOpen = false,
+                sheet = null,
             )
         }
         if (!tickerStarted) {
@@ -56,7 +57,8 @@ class PlayerViewModel : ViewModel() {
         hideJob = viewModelScope.launch {
             delay(HIDE_DELAY_MS)
             // never auto-hide while an overlay holds focus
-            if (!_state.value.switcherOpen && !_state.value.chromeFocused) {
+            val s = _state.value
+            if (!s.switcherOpen && !s.chromeFocused && s.sheet == null) {
                 _state.update { it.copy(controlsVisible = false) }
             }
         }
@@ -78,6 +80,18 @@ class PlayerViewModel : ViewModel() {
      *  standard overlay — the two would otherwise render on top of each other. */
     fun openSwitcher() = _state.update { it.copy(switcherOpen = true) }
     fun closeSwitcher() = _state.update { it.copy(switcherOpen = false, controlsVisible = false) }
+
+    /** Audio/subtitle picker or info panel: chrome stays visible while open. */
+    fun openSheet(sheet: PlayerSheet) {
+        hideJob?.cancel()
+        _state.update { it.copy(controlsVisible = true, sheet = sheet) }
+    }
+
+    fun closeSheet() = _state.update { it.copy(sheet = null) }
+
+    /** Fed from the player's onTracksChanged — keeps the pickers current. */
+    fun setTrackOptions(audio: List<TrackOption>, subtitles: List<TrackOption>) =
+        _state.update { it.copy(audioOptions = audio, subtitleOptions = subtitles) }
 
     /** Player events flow back into the chrome state. */
     fun setBuffering(buffering: Boolean) = _state.update { it.copy(isBuffering = buffering) }
