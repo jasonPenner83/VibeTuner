@@ -84,6 +84,9 @@ private fun TrackList(
     if (title == "SUBTITLES" && options.size <= 1) {
         Text("No subtitles available", color = AerialColors.Txt3, fontSize = 14.sp)
     }
+    if (title == "AUDIO" && options.isEmpty()) {
+        Text("No audio tracks available", color = AerialColors.Txt3, fontSize = 14.sp)
+    }
     val focusIndex = options.indexOfFirst { it.selected }.coerceAtLeast(0)
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         itemsIndexed(options, key = { _, opt -> opt.id }) { index, option ->

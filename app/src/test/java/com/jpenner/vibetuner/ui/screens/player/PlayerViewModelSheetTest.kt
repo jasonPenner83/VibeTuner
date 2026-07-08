@@ -40,4 +40,16 @@ class PlayerViewModelSheetTest {
         assertEquals(audio, vm.state.value.audioOptions)
         assertEquals(subs, vm.state.value.subtitleOptions)
     }
+
+    @Test
+    fun `open clears stale track options on channel change`() {
+        val vm = PlayerViewModel()
+        vm.setTrackOptions(
+            listOf(TrackOption("1:0", "English · Stereo", true)),
+            listOf(TrackOption(TRACK_OFF_ID, "Off", true)),
+        )
+        vm.open(channel = null, program = null)
+        assertTrue(vm.state.value.audioOptions.isEmpty())
+        assertTrue(vm.state.value.subtitleOptions.isEmpty())
+    }
 }

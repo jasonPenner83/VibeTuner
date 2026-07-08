@@ -37,7 +37,6 @@ import androidx.media3.ui.PlayerView
 import com.jpenner.vibetuner.data.model.Channel
 import com.jpenner.vibetuner.data.model.Program
 import com.jpenner.vibetuner.ui.components.*
-import com.jpenner.vibetuner.ui.screens.player.PlayerSheet
 import com.jpenner.vibetuner.ui.theme.Dimens.DesignCanvasWidth
 import com.jpenner.vibetuner.ui.theme.Dimens
 import java.time.LocalTime

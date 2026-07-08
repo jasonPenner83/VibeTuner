@@ -41,6 +41,8 @@ class PlayerViewModel : ViewModel() {
                 chromeFocused = false,
                 switcherOpen = false,
                 sheet = null,
+                audioOptions = emptyList(),
+                subtitleOptions = emptyList(),
             )
         }
         if (!tickerStarted) {

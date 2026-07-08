@@ -385,8 +385,10 @@ class MainActivity : ComponentActivity() {
                                         interactive = tuneOverlayDone,
                                         isFavourite = playerFavourite,
                                         onToggleFavourite = {
-                                            tunedChannel?.let { channelRepository.toggleFavourite(it.id) }
-                                            playerFavourite = !playerFavourite
+                                            tunedChannel?.let {
+                                                channelRepository.toggleFavourite(it.id)
+                                                playerFavourite = !playerFavourite
+                                            }
                                         },
                                     )
                                 }
