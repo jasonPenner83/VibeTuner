@@ -37,6 +37,7 @@ import com.jpenner.vibetuner.ui.screens.guide.GuideViewModel
 @Composable
 fun GuideScreen(
     onWatch: (channelId: String) -> Unit,
+    onOpenLineup: (channelId: String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenProfile: () -> Unit,
     viewModel: GuideViewModel = viewModel(),
@@ -125,6 +126,10 @@ fun GuideScreen(
                 channel = channel,
                 items = listOf(
                     ChannelMenuItem("Watch now") { onWatch(channel.id); selectedChannel = null },
+                    ChannelMenuItem("View full schedule") {
+                        onOpenLineup(channel.id)
+                        selectedChannel = null
+                    },
                     ChannelMenuItem("Add to favourites") {
                         viewModel.toggleFavourite(channel.id)
                         selectedChannel = null

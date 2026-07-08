@@ -27,6 +27,7 @@ import com.jpenner.vibetuner.data.repository.ProfileRepository
 import com.jpenner.vibetuner.data.repository.ProfileStore
 import com.jpenner.vibetuner.data.sync.SyncManager
 import com.jpenner.vibetuner.phone.ui.screens.guide.GuideScreen
+import com.jpenner.vibetuner.phone.ui.screens.lineup.DayLineupScreen
 import com.jpenner.vibetuner.phone.ui.screens.player.PlayerScreen
 import com.jpenner.vibetuner.phone.ui.screens.player.ResolvingScreen
 import com.jpenner.vibetuner.phone.ui.screens.settings.SettingsScreen
@@ -34,13 +35,14 @@ import com.jpenner.vibetuner.phone.ui.screens.settings.SettingsViewModel
 import com.jpenner.vibetuner.phone.ui.screens.signin.ProfilePickerScreen
 import com.jpenner.vibetuner.phone.ui.theme.VibeTunerPhoneTheme
 import com.jpenner.vibetuner.ui.screens.guide.GuideViewModel
+import com.jpenner.vibetuner.ui.screens.lineup.DayLineupViewModel
 import com.jpenner.vibetuner.ui.screens.signin.ProfileViewModel
 import kotlinx.coroutines.launch
 import com.jpenner.vibetuner.ui.screens.guide.currentGuideMinutes
 
 /** Phase 1 MVP screens: pick a profile, browse the guide, watch, and a small
  *  settings page (sync only — see SettingsViewModel in ui/screens/settings). */
-private enum class PhoneScreen { PROFILE_PICKER, GUIDE, RESOLVING, PLAYER, SETTINGS }
+private enum class PhoneScreen { PROFILE_PICKER, GUIDE, DAY_LINEUP, RESOLVING, PLAYER, SETTINGS }
 
 class MainActivity : ComponentActivity() {
 
@@ -73,6 +75,15 @@ class MainActivity : ComponentActivity() {
         googleSignInLauncher.launch(GoogleSignIn.getClient(this, gso).signInIntent)
     }
 
+    // One activity-scoped lineup VM serves both hosts (Guide full screen and the
+    // player's Schedule sheet); DayLineupContent reloads it on every entry.
+    @Composable
+    private fun rememberDayLineupViewModel(): DayLineupViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { DayLineupViewModel(loadChannels = { channelRepository.loadGuide() }) }
+        },
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -83,6 +94,7 @@ class MainActivity : ComponentActivity() {
                 var tunedProgram by remember { mutableStateOf<Program?>(null) }
                 var playerChannels by remember { mutableStateOf<List<Channel>>(emptyList()) }
                 var resolvedUrl by remember { mutableStateOf<String?>(null) }
+                var lineupChannelId by remember { mutableStateOf<String?>(null) }
 
                 // Program.isLive is static content metadata (e.g. "this is a live
                 // broadcast"), not "airing right now" — picking programs.firstOrNull
@@ -134,9 +146,21 @@ class MainActivity : ComponentActivity() {
                                     val ch = guideVm.state.value.channels.find { it.id == channelId }
                                     beginWatch(ch, guideVm.state.value.channels)
                                 },
+                                onOpenLineup = { channelId ->
+                                    lineupChannelId = channelId
+                                    currentScreen = PhoneScreen.DAY_LINEUP
+                                },
                                 onOpenSettings = { currentScreen = PhoneScreen.SETTINGS },
                                 onOpenProfile = { currentScreen = PhoneScreen.PROFILE_PICKER },
                                 viewModel = guideVm,
+                            )
+                        }
+
+                        PhoneScreen.DAY_LINEUP -> {
+                            DayLineupScreen(
+                                channelId = lineupChannelId.orEmpty(),
+                                onBack = { currentScreen = PhoneScreen.GUIDE },
+                                viewModel = rememberDayLineupViewModel(),
                             )
                         }
 
