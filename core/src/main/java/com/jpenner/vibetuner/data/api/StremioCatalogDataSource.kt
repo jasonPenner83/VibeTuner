@@ -56,7 +56,7 @@ class StremioCatalogDataSource {
                     Log.w("VibeTuner Catalog", "⚪ ${response.code} for $url")
                     return emptyList()
                 }
-                parseMetas(body, type)
+                parseCatalogMetas(body, type)
             }
         } catch (e: Exception) {
             Log.e("VibeTuner Catalog", "🔥 Fetch error for $url: ${e.message}")
@@ -64,53 +64,57 @@ class StremioCatalogDataSource {
         }
     }
 
-    private fun parseMetas(body: String, catalogType: String): List<RawMediaItem> {
-        val metas = JSONObject(body).optJSONArray("metas") ?: return emptyList()
-        val out = mutableListOf<RawMediaItem>()
-        for (i in 0 until metas.length()) {
-            val meta = metas.optJSONObject(i) ?: continue
-            val id = meta.optString("id", "").trim()
-            val name = meta.optString("name", "").trim()
-            if (id.isBlank() || name.isBlank()) continue
-
-            val type = meta.optString("type", catalogType)
-            val isSeries = type.equals("series", ignoreCase = true) ||
-                    type.equals("tv", ignoreCase = true) ||
-                    type.equals("channel", ignoreCase = true)
-            val poster = meta.optString("poster", "").ifBlank { null }
-            val background = meta.optString("background", "").ifBlank { null }
-
-            out.add(
-                RawMediaItem(
-                    title = name,
-                    description = meta.optString("description", ""),
-                    durationMinutes = runtimeMinutes(meta.optString("runtime", ""), isSeries),
-                    mediaType = if (isSeries) "TV Show" else "Movie",
-                    imdbId = id,
-                    posterUrl = poster,
-                    backdropUrl = background ?: poster,
-                    originalAirDate = meta.optString("releaseInfo", "").ifBlank { null }
-                )
-            )
-        }
-        return out
-    }
-
-    /** Parse a runtime string like "148 min" / "1h 22min"; fall back to a per-type default. */
-    private fun runtimeMinutes(runtime: String, isSeries: Boolean): Float {
-        val default = if (isSeries) 45f else 115f
-        if (runtime.isBlank()) return default
-        val hours = Regex("(\\d+)\\s*h").find(runtime)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-        val mins = Regex("(\\d+)\\s*m").find(runtime)?.groupValues?.get(1)?.toIntOrNull()
-            ?: runtime.filter { it.isDigit() }.toIntOrNull()?.takeIf { hours == 0 }
-            ?: 0
-        val total = hours * 60 + mins
-        return if (total > 0) total.toFloat() else default
-    }
-
     private companion object {
         const val PAGE = 100
     }
+}
+
+/**
+ * Parse a catalog page's `metas` into [RawMediaItem]s. An unknown runtime becomes the
+ * 0-minute sentinel so the harvest layer can resolve the real length from the item's
+ * `/meta` resource instead of padding the guide with a guessed default.
+ */
+internal fun parseCatalogMetas(body: String, catalogType: String): List<RawMediaItem> {
+    val metas = runCatching { JSONObject(body).optJSONArray("metas") }.getOrNull() ?: return emptyList()
+    val out = mutableListOf<RawMediaItem>()
+    for (i in 0 until metas.length()) {
+        val meta = metas.optJSONObject(i) ?: continue
+        val id = meta.optString("id", "").trim()
+        val name = meta.optString("name", "").trim()
+        if (id.isBlank() || name.isBlank()) continue
+
+        val type = meta.optString("type", catalogType)
+        val isSeries = type.equals("series", ignoreCase = true) ||
+                type.equals("tv", ignoreCase = true) ||
+                type.equals("channel", ignoreCase = true)
+        val poster = meta.optString("poster", "").ifBlank { null }
+        val background = meta.optString("background", "").ifBlank { null }
+
+        out.add(
+            RawMediaItem(
+                title = name,
+                description = meta.optString("description", ""),
+                durationMinutes = parseRuntimeString(meta.optString("runtime", "")) ?: 0f,
+                mediaType = if (isSeries) "TV Show" else "Movie",
+                imdbId = id,
+                posterUrl = poster,
+                backdropUrl = background ?: poster,
+                originalAirDate = meta.optString("releaseInfo", "").ifBlank { null }
+            )
+        )
+    }
+    return out
+}
+
+/** Parse a runtime string like "148 min" / "1h 22min"; null when absent or unparseable. */
+internal fun parseRuntimeString(runtime: String): Float? {
+    if (runtime.isBlank()) return null
+    val hours = Regex("(\\d+)\\s*h").find(runtime)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+    val mins = Regex("(\\d+)\\s*m").find(runtime)?.groupValues?.get(1)?.toIntOrNull()
+        ?: runtime.filter { it.isDigit() }.toIntOrNull()?.takeIf { hours == 0 }
+        ?: 0
+    val total = hours * 60 + mins
+    return if (total > 0) total.toFloat() else null
 }
 
 /** Stremio catalog route: /catalog/{type}/{id}[/{extraArgs}].json — extra args URL-encoded, &-joined. */

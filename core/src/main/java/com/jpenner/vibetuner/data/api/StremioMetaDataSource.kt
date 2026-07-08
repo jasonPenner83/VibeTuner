@@ -50,6 +50,11 @@ private fun runtimeMinutes(runtime: String): Float {
     return if (n > 0) n.toFloat() else 45f
 }
 
+/** Parse a `/meta` body's `meta.runtime` into minutes; null when absent or unparseable. */
+fun parseMetaRuntimeMinutes(body: String): Float? = runCatching {
+    JSONObject(body).optJSONObject("meta")?.optString("runtime", "")?.let { parseRuntimeString(it) }
+}.getOrNull()
+
 /** Fetches a series' episode list from an addon's `/meta` resource. */
 class StremioMetaDataSource {
     private val client = OkHttpClient.Builder()
@@ -71,6 +76,22 @@ class StremioMetaDataSource {
             } catch (e: Exception) {
                 Log.e("VibeTuner Meta", "🔥 meta error for $url: ${e.message}")
                 emptyList()
+            }
+        }
+
+    /** Fetch an item's real runtime from its `/meta` resource; null when the addon has none. */
+    suspend fun fetchRuntimeMinutes(baseUrl: String, type: String, id: String): Float? =
+        withContext(Dispatchers.IO) {
+            val url = "$baseUrl/meta/$type/$id.json"
+            try {
+                client.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                    val body = response.body?.string()
+                    if (!response.isSuccessful || body.isNullOrBlank()) null
+                    else parseMetaRuntimeMinutes(body)
+                }
+            } catch (e: Exception) {
+                Log.e("VibeTuner Meta", "🔥 runtime error for $url: ${e.message}")
+                null
             }
         }
 }

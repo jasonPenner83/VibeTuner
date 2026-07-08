@@ -45,6 +45,8 @@ class ChannelRepository(private val context: Context) {
     )
     private val overrideStore = ChannelOverrideStore(context)
     private val metaSource = com.jpenner.vibetuner.data.api.StremioMetaDataSource()
+    private val marathonProgressStore =
+        MarathonProgressStore(File(context.filesDir, "vibetuner_marathon_progress.json"))
     private val syncManager by lazy { com.jpenner.vibetuner.data.sync.SyncManager.get(context) }
 
     /** In-memory hold of the populated guide so Home/Guide/tune share one build per day+lineup. */
@@ -243,9 +245,8 @@ class ChannelRepository(private val context: Context) {
     ): List<Channel> {
         val newlyHarvested = java.util.concurrent.ConcurrentHashMap<String, List<RawMediaItem>>()
         return withContext(Dispatchers.IO) {
-            val addonBaseById = addonRepository.getAddons(activeProfileId()).associate { it.id to it.baseUrl }
-            val epochMinute = LocalDate.now(scheduleZone).atStartOfDay(scheduleZone)
-                .toInstant().toEpochMilli() / 60_000L
+            val profileId = activeProfileId()
+            val addonBaseById = addonRepository.getAddons(profileId).associate { it.id to it.baseUrl }
             val total = channels.size
             val doneCount = java.util.concurrent.atomic.AtomicInteger(0)
             // Harvest a few channels at a time so one slow addon doesn't serialize the whole guide.
@@ -263,13 +264,24 @@ class ChannelRepository(private val context: Context) {
                             if (pool.isEmpty()) {
                                 channel.copy(programs = emptyList())
                             } else {
-                                val processed = if (channel.sortingRule.uppercase() == "CHRONOLOGICAL") {
-                                    val sequence = buildMarathonSequence(groupEpisodesByShow(pool), channel.marathonLimit)
-                                    rotateToStart(sequence, marathonStartIndex(channel.id, sequence, epochMinute))
-                                } else {
-                                    applyDailySeedShuffle(pool)
+                                val chronological = channel.sortingRule.uppercase() == "CHRONOLOGICAL"
+                                val epochDay = scheduleEpochDay()
+                                val startPointers =
+                                    if (chronological) marathonProgressStore.startPointersFor(profileId, channel.id, epochDay)
+                                    else emptyMap()
+                                // Movies fall out as singleton "shows", so one round of
+                                // 1-episode blocks airs the whole pool before any repeat.
+                                val day = buildDaySchedule(
+                                    channelId = channel.id,
+                                    epochDay = epochDay,
+                                    perShow = groupEpisodesByShow(pool),
+                                    limit = if (chronological) channel.marathonLimit else 1,
+                                    startPointers = startPointers,
+                                )
+                                if (chronological) {
+                                    marathonProgressStore.save(profileId, channel.id, epochDay, startPointers, day.endPointers)
                                 }
-                                channel.copy(programs = assemble24HourEpgTimeline(channel.id, processed))
+                                channel.copy(programs = assemble24HourEpgTimeline(channel.id, day.items))
                             }
                         }
                         onProgress(doneCount.incrementAndGet(), total)
@@ -283,9 +295,6 @@ class ChannelRepository(private val context: Context) {
             }
         }
     }
-
-    private fun applyDailySeedShuffle(pool: List<RawMediaItem>): List<RawMediaItem> =
-        dailySeedShuffle(pool, LocalDate.now(scheduleZone).toEpochDay())
 
     private fun assemble24HourEpgTimeline(channelId: String, sourcePool: List<RawMediaItem>): List<Program> {
         val compiledTimelinePrograms = mutableListOf<Program>()
@@ -359,11 +368,13 @@ class ChannelRepository(private val context: Context) {
         val metas = catalogSource.fetchCatalog(
             baseUrl, coords.type, coords.catalogId,
             extra = coords.extraName?.let { e -> coords.option?.let { o -> e to o } },
+        ).distinctBy { it.imdbId }
+        // Episodes carry their series meta's runtime; movies (in either mode) may still
+        // hold the 0-sentinel and need their real length from /meta.
+        val pool = resolveUnknownRuntimes(
+            baseUrl, coords.type,
+            if (channel.sortingRule.uppercase() == "CHRONOLOGICAL") expandSeries(baseUrl, metas) else metas,
         )
-        val pool = if (channel.sortingRule.uppercase() == "CHRONOLOGICAL")
-            expandSeries(baseUrl, metas)
-        else
-            metas
         Log.i(TAG, "🌐 ${channel.name}: harvest cache MISS, fetched ${pool.size} items in ${System.currentTimeMillis() - fetchStartMs}ms")
 
         // Cache empty pools too (negative caching, short TTL) so a dead catalog
@@ -371,6 +382,29 @@ class ChannelRepository(private val context: Context) {
         harvestCache.write(cacheKey, pool)
         newlyHarvested[cacheKey] = pool
         return pool
+    }
+
+    /**
+     * Fill in each 0-sentinel runtime from the item's `/meta` resource (concurrency-capped);
+     * items whose addon has no runtime anywhere fall back to a per-type default.
+     */
+    private suspend fun resolveUnknownRuntimes(
+        baseUrl: String,
+        catalogType: String,
+        metas: List<RawMediaItem>,
+    ): List<RawMediaItem> = coroutineScope {
+        val semaphore = Semaphore(5)
+        metas.map { item ->
+            async {
+                if (item.durationMinutes > 0f) item
+                else {
+                    val real = semaphore.withPermit {
+                        metaSource.fetchRuntimeMinutes(baseUrl, catalogType, item.imdbId)
+                    }
+                    item.copy(durationMinutes = real ?: if (item.mediaType == "TV Show") 45f else 115f)
+                }
+            }
+        }.awaitAll()
     }
 
     /** Expand every "TV Show" catalog item into its episodes (concurrency-capped); movies pass through. */
@@ -421,27 +455,6 @@ fun parseStremioSource(sourceValue: String): StremioSource? {
     }
     return StremioSource(parts[0], parts[1], parts[2], extraName, option)
 }
-
-private val EPISODE_TITLE_REGEX = Regex("S(\\d+)E(\\d+)")
-private val EPISODE_SUFFIX_REGEX = Regex("\\sS\\d+E\\d+$")
-
-private fun effectiveSeason(item: RawMediaItem): Int =
-    item.season ?: EPISODE_TITLE_REGEX.find(item.title)?.groupValues?.get(1)?.toIntOrNull() ?: 1
-
-private fun effectiveEpisode(item: RawMediaItem): Int =
-    item.episodeNumber ?: EPISODE_TITLE_REGEX.find(item.title)?.groupValues?.get(2)?.toIntOrNull() ?: 1
-
-private fun baseShowTitle(item: RawMediaItem): String =
-    item.title.replace(EPISODE_SUFFIX_REGEX, "")
-
-/**
- * Order episodes for a marathon: group by show title, then ascending by season and episode.
- * Prefers the real season/episodeNumber fields, falling back to the title's SxxExx pattern.
- */
-fun sortEpisodicChronologically(pool: List<RawMediaItem>): List<RawMediaItem> =
-    pool.sortedWith(
-        compareBy({ baseShowTitle(it) }, { effectiveSeason(it) }, { effectiveEpisode(it) })
-    )
 
 /** Logo-tile initials derived from a channel name (e.g. "Apex Sports" -> "AS"). Data-layer twin of channelInitials. */
 fun channelAbbreviation(name: String): String {
