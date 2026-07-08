@@ -36,17 +36,11 @@ import com.jpenner.vibetuner.phone.ui.theme.VibeTunerPhoneTheme
 import com.jpenner.vibetuner.ui.screens.guide.GuideViewModel
 import com.jpenner.vibetuner.ui.screens.signin.ProfileViewModel
 import kotlinx.coroutines.launch
+import com.jpenner.vibetuner.ui.screens.guide.currentGuideMinutes
 
 /** Phase 1 MVP screens: pick a profile, browse the guide, watch, and a small
  *  settings page (sync only — see SettingsViewModel in ui/screens/settings). */
 private enum class PhoneScreen { PROFILE_PICKER, GUIDE, RESOLVING, PLAYER, SETTINGS }
-
-// The schedule is assembled in Central time (see ChannelRepository / GuideViewModel),
-// so "now" for program lookups must read the same zone or it won't line up.
-private fun currentGuideMinutes(): Int {
-    val now = java.time.LocalTime.now(java.time.ZoneId.of("America/Chicago"))
-    return now.hour * 60 + now.minute
-}
 
 class MainActivity : ComponentActivity() {
 

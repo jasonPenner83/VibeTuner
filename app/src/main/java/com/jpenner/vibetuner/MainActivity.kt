@@ -42,13 +42,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import androidx.lifecycle.lifecycleScope
-
-// The schedule is assembled in Central time (see ChannelRepository / GuideViewModel),
-// so "now" for program lookups must read the same zone, or it won't line up.
-private fun currentGuideMinutes(): Int {
-    val now = java.time.LocalTime.now(java.time.ZoneId.of("America/Chicago"))
-    return now.hour * 60 + now.minute
-}
+import com.jpenner.vibetuner.ui.screens.guide.currentGuideMinutes
 
 enum class AppScreen {
     GUIDE,
