@@ -59,6 +59,20 @@ class ChannelRepository(private val context: Context) {
      *  switch is picked up. Public so screen VMs can detect a switch and reload. */
     fun activeProfileId(): String = profileRepository.activeProfileId() ?: "default"
 
+    /** Last channel each profile tuned to, in-memory only — lets the Guide
+     *  refocus it on return from Player. Never persisted; lost on process death. */
+    private val tunedChannelByProfile = mutableMapOf<String, String>()
+
+    /** Records [channelId] as the active profile's current channel. Call this
+     *  everywhere the app enters the watch flow (Guide/Home/ProgramInfo "watch",
+     *  in-player zap/switch). */
+    fun setTunedChannel(channelId: String) {
+        tunedChannelByProfile[activeProfileId()] = channelId
+    }
+
+    /** The active profile's last-tuned channel id, or null if none this session. */
+    fun tunedChannelId(): String? = tunedChannelByProfile[activeProfileId()]
+
     /** All channels for [profileId] (incl. disabled) — the Channel Manager reads this for the active profile. */
     fun channelLineup(profileId: String = activeProfileId()): List<Channel> {
         val allowAdult = profileStore.byId(profileId)?.allowsAdult == true
