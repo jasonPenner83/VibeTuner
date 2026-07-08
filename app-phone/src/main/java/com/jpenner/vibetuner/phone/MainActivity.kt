@@ -171,6 +171,9 @@ class MainActivity : ComponentActivity() {
                         }
 
                         PhoneScreen.PLAYER -> {
+                            var playerFavourite by remember(tunedChannel?.id) {
+                                mutableStateOf(tunedChannel?.let { channelRepository.isFavourite(it.id) } == true)
+                            }
                             PlayerScreen(
                                 channel = tunedChannel,
                                 program = tunedProgram,
@@ -180,6 +183,11 @@ class MainActivity : ComponentActivity() {
                                 onZap = { channelId ->
                                     val ch = playerChannels.find { it.id == channelId }
                                     beginWatch(ch, playerChannels)
+                                },
+                                isFavourite = playerFavourite,
+                                onToggleFavourite = {
+                                    tunedChannel?.let { channelRepository.toggleFavourite(it.id) }
+                                    playerFavourite = !playerFavourite
                                 },
                             )
                         }

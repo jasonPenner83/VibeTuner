@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
@@ -41,6 +43,8 @@ fun PlayerTopBar(
     program: Program?,
     clock: String,
     onBack: () -> Unit,
+    isFavourite: Boolean = false,
+    onToggleFavourite: () -> Unit = {},
     modifier: Modifier = Modifier,
     backFocusRequester: FocusRequester? = null,
     downFocusRequester: FocusRequester? = null,
@@ -90,6 +94,13 @@ fun PlayerTopBar(
             } else {
                 Spacer(Modifier.weight(1f))
             }
+
+            IconChipButton(
+                if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                onToggleFavourite,
+                modifier = Modifier
+                    .let { if (downFocusRequester != null) it.focusProperties { down = downFocusRequester } else it },
+            )
 
             Text(clock, style = AerialTypography.titleMedium, color = AerialColors.Txt2)
         }

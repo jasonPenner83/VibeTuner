@@ -363,6 +363,9 @@ class MainActivity : ComponentActivity() {
                                 // Only mount the player once we have a URL to resolve against
                                 // (or the overlay has given up) — never during the resolve phase.
                                 if (resolvedUrl != null || tuneOverlayDone) {
+                                    var playerFavourite by remember(tunedChannel?.id) {
+                                        mutableStateOf(tunedChannel?.let { channelRepository.isFavourite(it.id) } == true)
+                                    }
                                     PlayerScreen(
                                         channel = tunedChannel,
                                         program = tunedProgram,
@@ -380,6 +383,11 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onFirstFrameReady = { playerReady = true },
                                         interactive = tuneOverlayDone,
+                                        isFavourite = playerFavourite,
+                                        onToggleFavourite = {
+                                            tunedChannel?.let { channelRepository.toggleFavourite(it.id) }
+                                            playerFavourite = !playerFavourite
+                                        },
                                     )
                                 }
                                 androidx.compose.animation.AnimatedVisibility(

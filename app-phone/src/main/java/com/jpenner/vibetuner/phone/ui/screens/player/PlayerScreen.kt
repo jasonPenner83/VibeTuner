@@ -24,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.ClosedCaption
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Pause
@@ -82,6 +84,8 @@ fun PlayerScreen(
     channels: List<Channel>,
     onExit: () -> Unit,
     onZap: (String) -> Unit,
+    isFavourite: Boolean = false,
+    onToggleFavourite: () -> Unit = {},
     viewModel: PlayerViewModel = viewModel(),
 ) {
     if (streamUrl.isNullOrBlank()) {
@@ -157,6 +161,8 @@ fun PlayerScreen(
                 },
                 onOpenSheet = viewModel::openSheet,
                 onOpenSwitcher = viewModel::openSwitcher,
+                isFavourite = isFavourite,
+                onToggleFavourite = onToggleFavourite,
             )
         }
 
@@ -216,6 +222,8 @@ private fun PlayerChrome(
     onRestart: () -> Unit,
     onOpenSheet: (PlayerSheet) -> Unit,
     onOpenSwitcher: () -> Unit,
+    isFavourite: Boolean = false,
+    onToggleFavourite: () -> Unit = {},
 ) {
     Box(
         Modifier.fillMaxSize().background(
@@ -244,6 +252,13 @@ private fun PlayerChrome(
                 Text(
                     program?.title ?: "", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            IconButton(onClick = onToggleFavourite) {
+                Icon(
+                    if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = if (isFavourite) "Remove favourite" else "Add favourite",
+                    tint = Color.White,
                 )
             }
             IconButton(onClick = onOpenSwitcher) {

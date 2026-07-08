@@ -54,6 +54,8 @@ fun PlayerScreen(
     onExit: () -> Unit,
     onZap: (String) -> Unit,
     onOpenGuide: () -> Unit,
+    isFavourite: Boolean = false,
+    onToggleFavourite: () -> Unit = {},
     // Fired once when the video has buffered its first frame — the tune-in
     // overlay keys off this to lift itself.
     onFirstFrameReady: () -> Unit = {},
@@ -261,6 +263,8 @@ fun PlayerScreen(
                 },
                 onOpenSheet = viewModel::openSheet,
                 onOpenGuide = onOpenGuide,
+                isFavourite = isFavourite,
+                onToggleFavourite = onToggleFavourite,
                 topBarFocusRequester = topBarFocusRequester,
                 chromeFocusRequester = chromeFocusRequester,
             )
@@ -357,13 +361,18 @@ private fun PlayerChrome(
     onRestart: () -> Unit,
     onOpenSheet: (PlayerSheet) -> Unit,
     onOpenGuide: () -> Unit,
+    isFavourite: Boolean = false,
+    onToggleFavourite: () -> Unit = {},
     topBarFocusRequester: FocusRequester,
     chromeFocusRequester: FocusRequester,
 ) {
     Box(Modifier.fillMaxSize()) {
         PlayerTopBar(
             channel = state.channel, program = state.program, clock = state.clock,
-            onBack = onBack, modifier = Modifier.align(Alignment.TopStart),
+            onBack = onBack,
+            isFavourite = isFavourite,
+            onToggleFavourite = onToggleFavourite,
+            modifier = Modifier.align(Alignment.TopStart),
             backFocusRequester = topBarFocusRequester,
             downFocusRequester = chromeFocusRequester,
         )
