@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
                 fun beginWatch(ch: Channel?, channels: List<Channel>) {
                     tunedChannel = ch
                     tunedProgram = ch?.nowPlaying(currentGuideMinutes())
+                    ch?.let { channelRepository.setTunedChannel(it.id) }
                     playerChannels = channels
                     resolvedUrl = null
                     currentScreen = PhoneScreen.RESOLVING
