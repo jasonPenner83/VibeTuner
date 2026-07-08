@@ -125,40 +125,6 @@ fun IconChipButton(icon: ImageVector, onClick: () -> Unit, modifier: Modifier = 
 fun SearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) =
     IconChipButton(Icons.Default.Search, onClick, modifier)
 
-/** Small avatar chip (top bar, 42dp). The big picker tile is ProfileTile.
- *  Shows [initials] on a gradient, or artwork via Coil when [photoUrl] is set. */
-@OptIn(ExperimentalTvMaterial3Api::class)
-@Composable
-fun ProfileAvatar(
-    initials: String,
-    gradient: List<Color>,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    photoUrl: String? = null,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.size(42.dp),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(11.dp)),
-        colors = ClickableSurfaceDefaults.colors(containerColor = AerialColors.Surface),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
-        border = ClickableSurfaceDefaults.border(
-            border = Border(BorderStroke(1.dp, AerialColors.Line), shape = RoundedCornerShape(11.dp)),
-            focusedBorder = Border(BorderStroke(2.dp, AerialColors.Accent), shape = RoundedCornerShape(11.dp))),
-    ) {
-        Box(
-            Modifier.fillMaxSize().background(Brush.linearGradient(gradient)),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (photoUrl != null) {
-                AsyncImage(model = photoUrl, contentDescription = null, modifier = Modifier.fillMaxSize())
-            } else {
-                Text(initials, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
-            }
-        }
-    }
-}
-
 /** Settings toggle. Display-only — the parent SettingsRow owns D-pad focus. */
 @Composable
 fun AerialSwitch(on: Boolean, modifier: Modifier = Modifier) {
