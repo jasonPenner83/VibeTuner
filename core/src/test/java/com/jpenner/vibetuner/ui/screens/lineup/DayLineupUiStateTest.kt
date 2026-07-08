@@ -40,10 +40,23 @@ class DayLineupUiStateTest {
     }
 
     @Test
+    fun `midnight-spanning program tags Upcoming after the day frame rolls (accepted behavior)`() {
+        // Pins spec-accepted behavior, not a bug: status math is same-day-frame only,
+        // so a program that ends after midnight (endMinutes > 1440) reads as Upcoming
+        // once `now` has rolled over to the next day's minute frame, even though the
+        // real-world program is still airing.
+        val p = program("late", startMinutes = 23 * 60 + 30, durationMinutes = 90)
+        assertEquals(SlotStatus.OnNow, p.toSlot(23 * 60 + 45).status)
+        assertEquals(SlotStatus.Upcoming, p.toSlot(30).status)
+    }
+
+    @Test
     fun `aired and upcoming slots have zero progress`() {
         val p = program("p", startMinutes = 19 * 60, durationMinutes = 60)
         assertEquals(0f, p.toSlot(21 * 60).progress, 0f)
         assertEquals(0f, p.toSlot(18 * 60).progress, 0f)
+        assertEquals(0, p.toSlot(21 * 60).minutesLeft)
+        assertEquals(0, p.toSlot(18 * 60).minutesLeft)
     }
 
     @Test

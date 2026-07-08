@@ -34,12 +34,14 @@ class DayLineupViewModel(
     private val clockFormat = DateTimeFormatter.ofPattern("h:mm a")
     private val dateFormat = DateTimeFormatter.ofPattern("EEE · MMM d")
     private var tickerStarted = false
+    private var loadJob: kotlinx.coroutines.Job? = null
 
     /** Called on every entry (screen or player overlay): the VM is
      *  activity-scoped, so each open must re-resolve the channel. */
     fun load(channelId: String) {
         _state.update { it.copy(isLoading = true, channel = null, slots = emptyList()) }
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             val channels = try {
                 loadChannels()
             } catch (c: CancellationException) {

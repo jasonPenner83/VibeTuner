@@ -14,11 +14,9 @@ data class LineupSlot(
     val program: Program,
     val status: SlotStatus,
     val progress: Float = 0f, // 0f..1f, only meaningful when OnNow
-) {
-    /** Whole minutes left in an OnNow program. */
-    val minutesLeft: Int
-        get() = ((1f - progress) * program.durationMinutes).toInt()
-}
+    /** Whole minutes left in an OnNow program (exact int math); 0 otherwise. */
+    val minutesLeft: Int = 0,
+)
 
 /** Tag [this] against the guide clock (minutes since midnight, Central). */
 fun Program.toSlot(nowMinutes: Int): LineupSlot {
@@ -28,7 +26,8 @@ fun Program.toSlot(nowMinutes: Int): LineupSlot {
         else -> SlotStatus.Upcoming
     }
     val progress = if (status == SlotStatus.OnNow) progressAt(nowMinutes) else 0f
-    return LineupSlot(this, status, progress)
+    val minutesLeft = if (status == SlotStatus.OnNow) (endMinutes - nowMinutes).coerceAtLeast(0) else 0
+    return LineupSlot(this, status, progress, minutesLeft)
 }
 
 /** "1h 30m" / "2h" / "45m". */
