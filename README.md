@@ -19,7 +19,7 @@ playable streams through those same Stremio addons.
 - **Daily freshness with caching** — a per-day disk cache keeps lineups stable for 24h and
   avoids hammering catalog sources.
 - **Multi-profile support** — separate profiles with their own addon configuration and
-  channel customization, synced across devices via Supabase.
+  channel customization; optional cross-device sync via a self-hosted Supabase project.
 - **Stremio stream resolution** — two-pass selection that weights resolution/codec and skips
   toxic/broken links, with emulator-aware decoder preferences.
 - **Graceful offline behavior** — if a catalog source is unreachable the guide shows a clear
@@ -31,7 +31,7 @@ playable streams through those same Stremio addons.
 - Kotlin, Jetpack Compose + **androidx.tv** Material3 (TV), Compose Material3 (phone)
 - OkHttp + `org.json` (data layer), kotlinx.coroutines, kotlinx.serialization
 - Media3 / ExoPlayer (playback)
-- Supabase (auth + profile/channel sync)
+- Supabase (optional, self-hosted: auth + profile/channel sync)
 - Local JSON file persistence (`vibetuner_channels.json`) + DataStore for settings
 - Gradle wrapper **9.4.1**, JDK **21**, `minSdk 26`, `compileSdk 37`
 
@@ -83,11 +83,65 @@ generates the SDK path on first open; add the other keys yourself (see below).
 
 - **Stremio add-ons** — configure manifest URLs in the in-app **Add-Ons** screen; the resolver
   queries them in order for both catalog listing and stream resolution.
-- **Supabase sync** — set `supabase.url` and `supabase.anonKey` in `local.properties` to enable
-  cross-device profile/channel sync; without them, sync is silently skipped and the app works
-  fully offline/local.
-- **Google Sign-In** — set `google.webClientId` in `local.properties` to enable Google
-  authentication for sync.
+- **Cross-device sync (optional)** — the app ships with sync disabled; it works fully
+  offline/local. To enable it you bring your own Supabase project and Google OAuth
+  credentials — see below.
+
+## Self-hosting sync (optional)
+
+Sync keeps profiles, add-on configuration, and channel customizations identical across
+devices signed into the same Google account. All sync logic runs on-device (`core/data/sync/`);
+the backend is just a Supabase Postgres table behind row-level security, so "hosting" it
+means creating a free Supabase project and pointing your build at it.
+
+### 1. Create the Supabase project
+
+1. Create a project at [supabase.com](https://supabase.com) (the free tier is fine — note
+   free projects pause after a week of inactivity).
+2. Apply the schema in `supabase/migrations/20260704_sync.sql`: paste it into the dashboard's
+   **SQL Editor** and run it, or use the Supabase CLI (`supabase link`, then `supabase db push`).
+   This creates the `sync_docs` and `harvest_pools` tables, the server-side `updated_at`
+   trigger, and RLS policies so each signed-in user can only touch their own rows.
+
+### 2. Set up Google OAuth
+
+The apps sign in with the classic Google Sign-In ID-token flow, which needs **two** OAuth
+clients in one Google Cloud project ([console.cloud.google.com](https://console.cloud.google.com)
+→ **APIs & Services → Credentials**):
+
+1. Configure the **OAuth consent screen** (External, add yourself as a test user while
+   the app is unpublished).
+2. Create a **Web application** OAuth client ID. No redirect URIs are needed — the ID token
+   is exchanged directly with Supabase. Its client ID is your `google.webClientId`.
+3. Create an **Android** OAuth client ID for each app you build, using the applicationId
+   (`com.jpenner.vibetuner` for TV, `com.jpenner.vibetuner.phone` for phone) and the SHA-1
+   of your signing certificate (`./gradlew signingReport`, or `keytool -list -v -keystore
+   ~/.android/debug.keystore` for debug builds). Without a matching Android client,
+   Google Sign-In fails on device with a `DEVELOPER_ERROR` status.
+
+### 3. Connect Google to Supabase
+
+In the Supabase dashboard, **Authentication → Sign In / Providers → Google**: enable the
+provider and add the **web** client ID from step 2 to the client IDs field. No client
+secret is required for the native ID-token flow.
+
+### 4. Point your build at it
+
+Add to `local.properties` (git-ignored):
+
+```properties
+supabase.url=https://<your-project-ref>.supabase.co
+supabase.anonKey=<your anon/publishable key>
+google.webClientId=<web client id>.apps.googleusercontent.com
+```
+
+Rebuild, then sign in with Google from the in-app Settings screen on each device. If any
+key is missing the sync code no-ops silently and the app stays local-only.
+
+Notes for operators: the anon key is safe to embed in a client (RLS enforces per-user
+isolation), and `harvest_pools` rows are day-scoped but never cleaned up automatically —
+if you run this long-term, add a scheduled delete (e.g. `pg_cron`) for rows older than a
+couple of days.
 
 ## Roadmap
 
