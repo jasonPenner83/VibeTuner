@@ -27,6 +27,8 @@ import com.jpenner.vibetuner.ui.screens.home.HomeScreen
 import com.jpenner.vibetuner.ui.screens.home.HomeViewModel
 import com.jpenner.vibetuner.ui.screens.detail.ProgramInfoScreen
 import com.jpenner.vibetuner.ui.screens.detail.ProgramInfoViewModel
+import com.jpenner.vibetuner.ui.screens.lineup.DayLineupScreen
+import com.jpenner.vibetuner.ui.screens.lineup.DayLineupViewModel
 import com.jpenner.vibetuner.ui.screens.settings.SettingsScreen
 import com.jpenner.vibetuner.ui.screens.settings.SettingsViewModel
 import com.jpenner.vibetuner.ui.screens.signin.ProfilePickerScreen
@@ -54,6 +56,7 @@ enum class AppScreen {
     PROFILE_PICKER,
     HOME,
     PROGRAM_INFO,
+    DAY_LINEUP,
     SETTINGS,
 }
 
@@ -91,6 +94,15 @@ class MainActivity : ComponentActivity() {
             .build()
         googleSignInLauncher.launch(GoogleSignIn.getClient(this, gso).signInIntent)
     }
+
+    // One activity-scoped lineup VM serves both hosts (Guide full screen and the
+    // player's Schedule overlay); DayLineupContent reloads it on every entry.
+    @Composable
+    private fun rememberDayLineupViewModel(): DayLineupViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { DayLineupViewModel(loadChannels = { channelRepository.loadGuide() }) }
+        },
+    )
 
     // Long-press back (exit) vs short press (navigate back) needs raw key
     // down/up timing, which OnBackPressedDispatcher callbacks don't expose.
@@ -130,6 +142,9 @@ class MainActivity : ComponentActivity() {
 
             // The program whose detail screen is open (PROGRAM_INFO route arg).
             var infoProgramId by remember { mutableStateOf<String?>(null) }
+
+            // The channel whose full-day lineup is open (DAY_LINEUP route arg).
+            var lineupChannelId by remember { mutableStateOf<String?>(null) }
 
             // Fully-populated guide channels (with programs), captured at watch time
             // so the in-player switcher can render real now-playing rows.
@@ -218,6 +233,10 @@ class MainActivity : ComponentActivity() {
                                     playerChannels = guideVm.state.value.channels
                                     beginWatch()
                                 },
+                                onOpenLineup = { channelId ->
+                                    lineupChannelId = channelId
+                                    currentScreen = AppScreen.DAY_LINEUP
+                                },
                                 onOpenSettings = { currentScreen = AppScreen.SETTINGS },
                                 onOpenProfile = { currentScreen = AppScreen.PROFILE_PICKER },
                                 onOpenAddons = { currentScreen = AppScreen.SETTINGS_ADDONS },
@@ -296,6 +315,14 @@ class MainActivity : ComponentActivity() {
                                 onBack = { currentScreen = AppScreen.HOME },
                                 onWatch = { channelId -> tuneToChannel(channelId) },
                                 viewModel = infoVm,
+                            )
+                        }
+
+                        AppScreen.DAY_LINEUP -> {
+                            DayLineupScreen(
+                                channelId = lineupChannelId.orEmpty(),
+                                onBack = { currentScreen = AppScreen.GUIDE },
+                                viewModel = rememberDayLineupViewModel(),
                             )
                         }
 

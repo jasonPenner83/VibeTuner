@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 fun GuideScreen(
     onWatch: (channelId: String) -> Unit,
     onOpenInfo: (programId: String) -> Unit,
+    onOpenLineup: (channelId: String) -> Unit,
     onNavigate: (TopTab) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenProfile: () -> Unit,
@@ -109,6 +110,10 @@ fun GuideScreen(
                     channel = channel,
                     items = listOf(
                         ChannelMenuItem("Watch now") { onWatch(channel.id); selectedChannel = null },
+                        ChannelMenuItem("View full schedule") {
+                            onOpenLineup(channel.id)
+                            selectedChannel = null
+                        },
                         ChannelMenuItem("Add to favourites") {
                             viewModel.toggleFavourite(channel.id)
                             selectedChannel = null
