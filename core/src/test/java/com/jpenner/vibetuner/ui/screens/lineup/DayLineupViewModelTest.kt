@@ -7,7 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -57,7 +56,7 @@ class DayLineupViewModelTest {
         )
 
     @Test
-    fun `load resolves the channel and tags slots against the guide clock`() = runTest {
+    fun `load resolves the channel and tags slots against the guide clock`() {
         val ch = channel(
             "a",
             program("p1", 18 * 60, 60),
@@ -80,7 +79,7 @@ class DayLineupViewModelTest {
     }
 
     @Test
-    fun `load with an unknown id lands in the empty state`() = runTest {
+    fun `load with an unknown id lands in the empty state`() {
         val vm = DayLineupViewModel(
             loadChannels = { listOf(channel("a")) },
             nowMinutes = { 0 },
@@ -93,7 +92,7 @@ class DayLineupViewModelTest {
     }
 
     @Test
-    fun `loader failure logs and lands in the empty state`() = runTest {
+    fun `loader failure logs and lands in the empty state`() {
         var logged: String? = null
         val vm = DayLineupViewModel(
             loadChannels = { error("boom") },
@@ -107,7 +106,7 @@ class DayLineupViewModelTest {
     }
 
     @Test
-    fun `retag flips a slot from OnNow to Aired when the clock passes its end`() = runTest {
+    fun `retag flips a slot from OnNow to Aired when the clock passes its end`() {
         var now = 19 * 60 + 30
         val vm = DayLineupViewModel(
             loadChannels = { listOf(channel("a", program("p1", 19 * 60, 60))) },
@@ -122,7 +121,7 @@ class DayLineupViewModelTest {
     }
 
     @Test
-    fun `loading a second channel replaces the previous slots`() = runTest {
+    fun `loading a second channel replaces the previous slots`() {
         val a = channel("a", program("pa", 8 * 60, 60))
         val b = channel("b", program("pb", 9 * 60, 60))
         val vm = DayLineupViewModel(
