@@ -12,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.jpenner.vibetuner.data.model.Channel
 import com.jpenner.vibetuner.data.model.Program
-import com.jpenner.vibetuner.ui.settings.*
 import com.jpenner.vibetuner.ui.screens.player.PlayerScreen
 import com.jpenner.vibetuner.ui.components.TransitionLoadingScreen
 import com.jpenner.vibetuner.data.repository.ChannelRepository
@@ -20,11 +19,9 @@ import com.jpenner.vibetuner.data.repository.ProfileRepository
 import com.jpenner.vibetuner.data.settings.DataStoreSettingsRepository
 import com.jpenner.vibetuner.data.model.PlaybackTarget
 import com.jpenner.vibetuner.data.model.Profile
-import com.jpenner.vibetuner.ui.components.TopBar
 import com.jpenner.vibetuner.ui.components.TopTab
 import kotlinx.coroutines.launch
 import com.jpenner.vibetuner.ui.screens.guide.GuideScreen
-import com.jpenner.vibetuner.ui.screens.guide.GuideUiState
 import com.jpenner.vibetuner.ui.screens.guide.GuideViewModel
 import com.jpenner.vibetuner.ui.screens.home.HomeScreen
 import com.jpenner.vibetuner.ui.screens.home.HomeViewModel
@@ -47,7 +44,7 @@ import com.google.android.gms.common.api.ApiException
 import androidx.lifecycle.lifecycleScope
 
 // The schedule is assembled in Central time (see ChannelRepository / GuideViewModel),
-// so "now" for program lookups must read the same zone or it won't line up.
+// so "now" for program lookups must read the same zone, or it won't line up.
 private fun currentGuideMinutes(): Int {
     val now = java.time.LocalTime.now(java.time.ZoneId.of("America/Chicago"))
     return now.hour * 60 + now.minute
@@ -101,6 +98,10 @@ class MainActivity : ComponentActivity() {
         googleSignInLauncher.launch(GoogleSignIn.getClient(this, gso).signInIntent)
     }
 
+    // Long-press back (exit) vs short press (navigate back) needs raw key
+    // down/up timing, which OnBackPressedDispatcher callbacks don't expose.
+    // Safe while enableOnBackInvokedCallback stays off in the manifest.
+    @Suppress("GestureBackNavigation")
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (event?.repeatCount == 0) backLongPress.onDown(onLongPress = { finish() })
@@ -109,6 +110,7 @@ class MainActivity : ComponentActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
+    @Suppress("GestureBackNavigation")
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (backLongPress.onUp()) onBackPressedDispatcher.onBackPressed()
