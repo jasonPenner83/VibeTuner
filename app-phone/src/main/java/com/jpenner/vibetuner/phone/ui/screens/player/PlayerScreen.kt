@@ -158,6 +158,7 @@ fun PlayerScreen(
             ChannelSwitcherSheet(
                 channels = channels,
                 nowMinutes = now.hour * 60 + now.minute,
+                current = channel,
                 onPick = { id -> viewModel.closeSwitcher(); onZap(id) },
                 onDismiss = viewModel::closeSwitcher,
             )
