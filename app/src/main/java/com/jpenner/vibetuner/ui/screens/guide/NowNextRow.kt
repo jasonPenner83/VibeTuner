@@ -2,6 +2,7 @@ package com.jpenner.vibetuner.ui.screens.guide
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -29,12 +30,20 @@ fun NowNextRow(
     onClick: (programId: String) -> Unit,
     onFocused: () -> Unit,
     onOpenMenu: () -> Unit,
+    requestFocusOnAppear: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val now = channel.nowPlaying(nowMinutes)
     val next = channel.nextUp(nowMinutes)
 
     val nowFocus = remember { FocusRequester() }
+
+    // Fires once when this row first appears already matching the tuned
+    // channel (e.g. scrolled into view by NowNextList) — not on later
+    // recompositions, since the key value doesn't change afterward.
+    LaunchedEffect(requestFocusOnAppear) {
+        if (requestFocusOnAppear) nowFocus.requestFocus()
+    }
 
     Row(
         modifier

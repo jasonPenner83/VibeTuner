@@ -2,10 +2,12 @@ package com.jpenner.vibetuner.ui.screens.guide
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.jpenner.vibetuner.data.model.Channel
 
 /**
@@ -21,7 +23,18 @@ fun NowNextList(
     modifier: Modifier = Modifier,
 ) {
     val channels = state.visibleChannels
+    val listState = rememberLazyListState()
+
+    // Whenever the tuned channel resolves to a real row (e.g. right after
+    // returning from Player), scroll it into view so the focus request below
+    // can find it. -1 (no tuned channel, or it's filtered out) is a no-op.
+    val focusIndex = channels.indexOfFirst { it.id == state.focusChannelId }
+    LaunchedEffect(focusIndex) {
+        if (focusIndex >= 0) listState.scrollToItem(focusIndex)
+    }
+
     LazyColumn(
+        state = listState,
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -34,6 +47,7 @@ fun NowNextList(
                 // Only the channel row is focusable here; the preview resolves the
                 // now-playing program itself, so the program index is unused.
                 onFocused = { onProgramFocused(index, 0) },
+                requestFocusOnAppear = index == focusIndex,
             )
         }
     }
