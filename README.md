@@ -52,14 +52,12 @@ core/src/main/java/com/jpenner/vibetuner/     # shared data/domain layer (no and
 app/src/main/java/com/jpenner/vibetuner/       # Android TV app
 ├── MainActivity.kt                  # entry point, app-screen routing, startup load/sync
 └── ui/
-    ├── epg/                         # TvGuideScreen + EPG components
+    ├── screens/guide/               # GuideScreen + EPG components
     ├── settings/                    # Channel Manager, Add-Ons, Remote Setup
     └── screens/player/              # PlayerScreen + ExoPlayer (rememberPlayer) + chrome
 
 app-phone/src/main/java/com/jpenner/vibetuner/phone/  # Android phone app (shares :core)
 ```
-
-Design specs, implementation plans, and progress notes live in `docs/superpowers/`.
 
 ## Building
 
