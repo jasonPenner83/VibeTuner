@@ -209,6 +209,7 @@ class MainActivity : ComponentActivity() {
                                         playerFavourite = !playerFavourite
                                     }
                                 },
+                                lineupViewModel = rememberDayLineupViewModel(),
                             )
                         }
                     }

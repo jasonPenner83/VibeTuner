@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.CalendarViewDay
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -59,7 +60,9 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.jpenner.vibetuner.data.model.Channel
 import com.jpenner.vibetuner.data.model.Program
+import com.jpenner.vibetuner.phone.ui.screens.lineup.DayLineupSheet
 import com.jpenner.vibetuner.phone.ui.theme.PhoneColors
+import com.jpenner.vibetuner.ui.screens.lineup.DayLineupViewModel
 import com.jpenner.vibetuner.ui.screens.player.PlayerSheet
 import com.jpenner.vibetuner.ui.screens.player.PlayerViewModel
 import com.jpenner.vibetuner.ui.screens.player.audioOptions
@@ -86,6 +89,8 @@ fun PlayerScreen(
     onZap: (String) -> Unit,
     isFavourite: Boolean = false,
     onToggleFavourite: () -> Unit = {},
+    // Non-null enables the Schedule button's full-day sheet (PlayerSheet.Schedule).
+    lineupViewModel: DayLineupViewModel? = null,
     viewModel: PlayerViewModel = viewModel(),
 ) {
     if (streamUrl.isNullOrBlank()) {
@@ -206,7 +211,16 @@ fun PlayerScreen(
                 program = state.program,
                 onDismiss = dismissSheet,
             )
-            PlayerSheet.Schedule -> Unit // bridging branch; Task 9 wires the phone Schedule sheet
+            PlayerSheet.Schedule -> {
+                val lineupChannelId = state.channel?.id
+                if (lineupViewModel != null && lineupChannelId != null) {
+                    DayLineupSheet(
+                        channelId = lineupChannelId,
+                        viewModel = lineupViewModel,
+                        onDismiss = dismissSheet,
+                    )
+                }
+            }
             null -> Unit
         }
     }
@@ -300,6 +314,9 @@ private fun PlayerChrome(
                 }
                 IconButton(onClick = { onOpenSheet(PlayerSheet.Info) }) {
                     Icon(Icons.Default.Info, contentDescription = "Programme info", tint = Color.White)
+                }
+                IconButton(onClick = { onOpenSheet(PlayerSheet.Schedule) }) {
+                    Icon(Icons.Default.CalendarViewDay, contentDescription = "Full-day schedule", tint = Color.White)
                 }
             }
         }
