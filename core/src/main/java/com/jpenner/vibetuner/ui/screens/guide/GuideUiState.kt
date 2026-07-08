@@ -16,6 +16,9 @@ data class GuideUiState(
     val genreFilter: Category? = null,     // null == "All Genres"
     val focused: FocusedCell = FocusedCell(),
     val isLoading: Boolean = true,
+    // The channel currently playing in the Player, if any — the Guide's list
+    // scrolls to and focuses this row on every entry (see NowNextList/GuideScreen).
+    val focusChannelId: String? = null,
 ) {
     val visibleChannels: List<Channel>
         get() = channels.filter {

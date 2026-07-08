@@ -54,6 +54,7 @@ class GuideViewModel(
                     // start the grid 30 min in the past so "now" sits just inside
                     gridStartMinutes = nowMinutes() - 30,
                     isLoading = false,
+                    focusChannelId = repository.tunedChannelId(),
                 )
             }
         }
