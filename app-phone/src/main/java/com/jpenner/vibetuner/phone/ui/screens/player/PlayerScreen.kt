@@ -18,11 +18,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.ClosedCaption
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -51,8 +58,12 @@ import androidx.media3.ui.PlayerView
 import com.jpenner.vibetuner.data.model.Channel
 import com.jpenner.vibetuner.data.model.Program
 import com.jpenner.vibetuner.phone.ui.theme.PhoneColors
+import com.jpenner.vibetuner.ui.screens.player.PlayerSheet
 import com.jpenner.vibetuner.ui.screens.player.PlayerViewModel
+import com.jpenner.vibetuner.ui.screens.player.audioOptions
 import com.jpenner.vibetuner.ui.screens.player.rememberPlayer
+import com.jpenner.vibetuner.ui.screens.player.selectTrack
+import com.jpenner.vibetuner.ui.screens.player.subtitleOptions
 
 /**
  * Touch counterpart of the TV app's PlayerScreen (ui/screens/player/PlayerScreen.kt
@@ -85,6 +96,7 @@ fun PlayerScreen(
         program = program,
         onBuffering = viewModel::setBuffering,
         onError = viewModel::setError,
+        onTracks = { viewModel.setTrackOptions(audioOptions(it), subtitleOptions(it)) },
     )
 
     LaunchedEffect(channel, program) { viewModel.open(channel, program) }
@@ -139,6 +151,11 @@ fun PlayerScreen(
                     if (player.playWhenReady) player.pause() else player.play()
                     viewModel.showControls()
                 },
+                onRestart = {
+                    player.seekTo(0)
+                    viewModel.showControls()
+                },
+                onOpenSheet = viewModel::openSheet,
                 onOpenSwitcher = viewModel::openSwitcher,
             )
         }
@@ -163,6 +180,28 @@ fun PlayerScreen(
                 onDismiss = viewModel::closeSwitcher,
             )
         }
+
+        val dismissSheet = { viewModel.closeSheet(); viewModel.showControls() }
+        when (state.sheet) {
+            PlayerSheet.Audio -> TrackPickerSheet(
+                title = "Audio",
+                options = state.audioOptions,
+                onSelect = { selectTrack(player, C.TRACK_TYPE_AUDIO, it); dismissSheet() },
+                onDismiss = dismissSheet,
+            )
+            PlayerSheet.Subtitles -> TrackPickerSheet(
+                title = "Subtitles",
+                options = state.subtitleOptions,
+                onSelect = { selectTrack(player, C.TRACK_TYPE_TEXT, it); dismissSheet() },
+                onDismiss = dismissSheet,
+            )
+            PlayerSheet.Info -> ProgramInfoSheet(
+                channel = state.channel,
+                program = state.program,
+                onDismiss = dismissSheet,
+            )
+            null -> Unit
+        }
     }
 }
 
@@ -174,6 +213,8 @@ private fun PlayerChrome(
     progress: Float,
     onBack: () -> Unit,
     onPlayPause: () -> Unit,
+    onRestart: () -> Unit,
+    onOpenSheet: (PlayerSheet) -> Unit,
     onOpenSwitcher: () -> Unit,
 ) {
     Box(
@@ -222,13 +263,28 @@ private fun PlayerChrome(
                 )
             }
             androidx.compose.foundation.layout.Spacer(Modifier.height(12.dp))
-            IconButton(onClick = onPlayPause, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp),
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onPlayPause, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp),
+                    )
+                }
+                IconButton(onClick = onRestart) {
+                    Icon(Icons.Default.Replay, contentDescription = "Restart", tint = Color.White)
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = { onOpenSheet(PlayerSheet.Subtitles) }) {
+                    Icon(Icons.Default.ClosedCaption, contentDescription = "Subtitles", tint = Color.White)
+                }
+                IconButton(onClick = { onOpenSheet(PlayerSheet.Audio) }) {
+                    Icon(Icons.Default.Audiotrack, contentDescription = "Audio track", tint = Color.White)
+                }
+                IconButton(onClick = { onOpenSheet(PlayerSheet.Info) }) {
+                    Icon(Icons.Default.Info, contentDescription = "Programme info", tint = Color.White)
+                }
             }
         }
     }
