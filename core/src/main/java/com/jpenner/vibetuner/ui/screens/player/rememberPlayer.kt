@@ -7,9 +7,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -36,6 +38,7 @@ fun rememberPlayer(
     onBuffering: (Boolean) -> Unit,
     onError: (String?) -> Unit,
     onReady: () -> Unit = {},
+    onTracks: (Tracks) -> Unit = {},
 ): ExoPlayer {
     val context = LocalContext.current
 
@@ -59,6 +62,10 @@ fun rememberPlayer(
             .build().apply {
                 playWhenReady = true
                 repeatMode = Player.REPEAT_MODE_ALL
+                // Captions default off; the subtitle picker re-enables them.
+                trackSelectionParameters = trackSelectionParameters.buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                    .build()
             }
     }
 
@@ -94,6 +101,8 @@ fun rememberPlayer(
                     }
                 }
             }
+
+            override fun onTracksChanged(tracks: Tracks) = onTracks(tracks)
         }
         player.addListener(listener)
         onDispose { player.removeListener(listener) }
