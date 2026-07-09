@@ -3,6 +3,8 @@ package com.jpenner.vibetuner.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,12 +22,11 @@ import com.jpenner.vibetuner.ui.theme.AerialTypography
 fun ChannelRowHeader(
     channel: Channel,
     onClick: ()-> Unit,
-    onLongClick: () -> Unit,
+    isFavourite: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Surface(
         onClick = onClick,
-        onLongClick = onLongClick,
         modifier = modifier,
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(12.dp)),
         colors = ClickableSurfaceDefaults.colors(
@@ -64,12 +65,26 @@ fun ChannelRowHeader(
                 }
             }
             Column {
-                Text(
-                    channel.name,
-                    style = AerialTypography.titleMedium,
-                    maxLines = 1,
-                    color = AerialColors.Txt
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        channel.name,
+                        style = AerialTypography.titleMedium,
+                        maxLines = 1,
+                        color = AerialColors.Txt,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (isFavourite) {
+                        Icon(
+                            Icons.Filled.Star,
+                            contentDescription = "Favourite channel",
+                            tint = AerialColors.Accent,
+                            modifier = Modifier.size(15.dp),
+                        )
+                    }
+                }
                 Text(
                     channel.category.label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
                     color = channel.category.color

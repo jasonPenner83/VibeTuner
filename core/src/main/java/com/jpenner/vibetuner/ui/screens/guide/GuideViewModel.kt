@@ -55,6 +55,7 @@ class GuideViewModel(
                     gridStartMinutes = nowMinutes() - 30,
                     isLoading = false,
                     focusChannelId = repository.tunedChannelId(),
+                    favouriteChannelIds = repository.favouriteChannelIds(),
                 )
             }
         }
@@ -82,5 +83,9 @@ class GuideViewModel(
 
     private fun nowMinutes(): Int = LocalTime.now(guideZone).let { it.hour * 60 + it.minute }
 
-    fun toggleFavourite(channelId: String) = repository.toggleFavourite(channelId)
+    fun toggleFavourite(channelId: String) {
+        repository.toggleFavourite(channelId)
+        // Re-read so the row star and menu label recompose instantly.
+        _state.update { it.copy(favouriteChannelIds = repository.favouriteChannelIds()) }
+    }
 }

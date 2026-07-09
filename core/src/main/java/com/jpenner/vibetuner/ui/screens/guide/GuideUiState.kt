@@ -19,7 +19,12 @@ data class GuideUiState(
     // The channel currently playing in the Player, if any — the Guide's list
     // scrolls to and focuses this row on every entry (see NowNextList/GuideScreen).
     val focusChannelId: String? = null,
+    // The active profile's favourite channel ids — drives the row star and the
+    // context menu's Add/Remove favourites label.
+    val favouriteChannelIds: Set<String> = emptySet(),
 ) {
+    fun isFavourite(channelId: String): Boolean = channelId in favouriteChannelIds
+
     val visibleChannels: List<Channel>
         get() = channels.filter {
             (typeFilter == null || it.type == typeFilter) &&

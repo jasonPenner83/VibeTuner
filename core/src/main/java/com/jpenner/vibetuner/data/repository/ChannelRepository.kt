@@ -89,6 +89,10 @@ class ChannelRepository(private val context: Context) {
     fun isFavourite(channelId: String): Boolean =
         profileStore.byId(activeProfileId())?.favouriteChannelIds?.contains(channelId) == true
 
+    /** The active profile's favourite channel ids. */
+    fun favouriteChannelIds(): Set<String> =
+        profileStore.byId(activeProfileId())?.favouriteChannelIds ?: emptySet()
+
     /**
      * One-shot guide load for the active profile: seed addons -> derive enabled lineup -> populate
      * live timelines. Caches the fully-populated result in memory (keyed by day + profile + lineup

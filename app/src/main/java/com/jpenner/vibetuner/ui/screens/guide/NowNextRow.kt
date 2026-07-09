@@ -30,6 +30,7 @@ fun NowNextRow(
     onClick: (programId: String) -> Unit,
     onFocused: () -> Unit,
     onOpenMenu: () -> Unit,
+    isFavourite: Boolean = false,
     requestFocusOnAppear: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -56,8 +57,8 @@ fun NowNextRow(
     ) {
         ChannelRowHeader(
             channel = channel,
-            onClick = { now?.let { onClick(it.id) } },
-            onLongClick = { onOpenMenu() },
+            onClick = onOpenMenu,
+            isFavourite = isFavourite,
             modifier = Modifier.width(248.dp))
 
         // The focusable element of the row -> opens detail, drives nothing else.

@@ -114,12 +114,13 @@ fun GuideScreen(
                             onOpenLineup(channel.id)
                             selectedChannel = null
                         },
-                        ChannelMenuItem("Add to favourites") {
+                        ChannelMenuItem(
+                            if (state.isFavourite(channel.id)) "Remove from favourites"
+                            else "Add to favourites"
+                        ) {
                             viewModel.toggleFavourite(channel.id)
                             selectedChannel = null
                         },
-                        ChannelMenuItem("Channel info") { selectedChannel = null /* TODO */ },
-                        ChannelMenuItem("Hide channel") { selectedChannel = null /* TODO */ },
                     ),
                     onDismiss = { selectedChannel = null },
                 )

@@ -130,4 +130,13 @@ class GuideUiStateTest {
 
         assertEquals(Category.Movies, afterTypeChange.genreFilter)
     }
+
+    @Test
+    fun `isFavourite reflects favouriteChannelIds and defaults to empty`() {
+        assertEquals(false, GuideUiState().isFavourite("ch1"))
+
+        val state = GuideUiState(favouriteChannelIds = setOf("ch1"))
+        assertEquals(true, state.isFavourite("ch1"))
+        assertEquals(false, state.isFavourite("ch2"))
+    }
 }

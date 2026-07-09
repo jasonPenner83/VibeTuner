@@ -17,6 +17,7 @@ class ProfileJsonTest {
         pinHash = "aabb:ccdd",
         requirePin = true,
         adultContent = false,
+        favouriteChannelIds = setOf("stremio:a:movie:top", "stremio:b:series:new"),
     )
 
     @Test
@@ -34,5 +35,11 @@ class ProfileJsonTest {
     fun `null pinHash survives round trip`() {
         val open = profile.copy(pinHash = null, requirePin = false)
         assertEquals(open, profileFromJson(open.toJson()))
+    }
+
+    @Test
+    fun `missing favouriteChannelIds reads as empty set`() {
+        val json = profile.toJson().apply { remove("favouriteChannelIds") }
+        assertEquals(emptySet<String>(), profileFromJson(json)!!.favouriteChannelIds)
     }
 }

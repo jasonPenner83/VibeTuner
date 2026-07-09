@@ -44,6 +44,7 @@ fun NowNextList(
                 nowMinutes = state.nowMinutes,
                 onClick = onProgramClick,
                 onOpenMenu = { onChannelMenu(channel)},
+                isFavourite = state.isFavourite(channel.id),
                 // Only the channel row is focusable here; the preview resolves the
                 // now-playing program itself, so the program index is unused.
                 onFocused = { onProgramFocused(index, 0) },
